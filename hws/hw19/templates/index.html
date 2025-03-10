@@ -1,0 +1,12 @@
+<table>
+    {% for user in users %}
+    <tr>
+        <td>
+            {{user.username}}
+        </td>
+        <td>
+            <a href="/users/{{user.id}}" + > {{user.first_name}} {{user.last_name}} </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
