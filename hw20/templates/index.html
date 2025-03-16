@@ -1,0 +1,12 @@
+<table>
+    {% for car in cars %}
+    <tr>
+        <td>
+            {{car.id}} :
+        </td>
+        <td>
+            {{car.name}} {{car.year}}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
