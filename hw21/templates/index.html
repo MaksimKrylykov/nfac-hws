@@ -1,0 +1,25 @@
+<table>
+    {% for book in books %}
+    <tr>
+        <td>
+            <a href="/books/{{book.id}}" + > {{ book.title }} </a>
+        </td>
+        <td>
+            Author: {{ book.author }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+<div>
+    {% if has_prev %}
+        <a href="/books/?page={{ prev_page }}&limit={{ limit }}">Prev</a>
+    {% endif %}
+
+    {% if has_next %}
+        <a href="/books/?page={{ next_page }}&limit={{ limit }}">Next</a>
+    {% endif %}
+
+    <p> Page {{ page }} of {{ total_pages }} </p>
+</div>
