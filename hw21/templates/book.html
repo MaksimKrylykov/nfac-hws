@@ -16,4 +16,18 @@
         Genre: {{ book.genre }}
     </p>
 
+    <div>
+        <a href="/books/{{ book.id }}/edit"> Edit </a>
+    </div>
+    
+    <div style="margin-top: 30px">
+        <a href="/books"> Go back </a>
+    </div>
+
+    <form style="margin-top: 30px" action="/books/{{ book.id }}/delete" method="post">
+
+        <input type="submit" value="Delete this book" />
+
+    </form>
+
 </div>

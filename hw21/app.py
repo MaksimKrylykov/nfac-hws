@@ -22,36 +22,76 @@ class BooksRepository:
         self.books = [
             Book(i, "Book" + str(i), "Author" + str(i), 1900 + i, 64 + i, "Genre" + str(i)) for i in range(1, 35)
         ]
+        self.curId = len(self.books)
     
     def get_all(self):
         return self.books
     
     def get_nextId(self):
-        return len(self.books) + 1
+        self.curId += 1
+        return self.curId
     
     def save(self, book: Book):
         self.books.append(book)
     
     def getByIndex(self, id):
-        try:
-            return self.books[id - 1]
-        except:
-            return None
+        for book in self.books:
+            if book.id == id:
+                return book
+        return None
+    
+    def update(self, id, book: Book):
+        for i in range(len(self.books)):
+            if (self.books[i].id == id):
+                self.books[i] = book
+                return
+    
+    def remove(self, id):
+        for i in range(len(self.books)):
+            if (self.books[i].id == id):
+                del self.books[i]
+                return
 
 
 repository = BooksRepository()
+
+
+@app.post("/books/{id}/delete")
+def delete_book(request: Request, id: int):
+
+    repository.remove(id)
+    return RedirectResponse("/books", status_code=303)
+
+
+@app.get("/books/{id}/edit")
+def edit_book_form(request: Request, response: Response, id: int):
+
+    book = repository.getByIndex(id)
+    if book == None:
+        response.status_code = 404
+        return "Not found"
+    
+    return templates.TemplateResponse(
+        "upd.html", {
+            "request": request,
+            "book": book
+        }
+    )
+
+
+@app.post("/books/{id}/edit")
+def post_book(request: Request, response: Response, id: int, title: str = Form(), author: str = Form(), year: int = Form(), total_pages: int = Form(), genre: str = Form()):
+
+    book = Book(id, title, author, year, total_pages, genre)
+    repository.update(id, book)
+    return RedirectResponse("/books", status_code=303)
 
 
 @app.get("/books/new")
 def new_book_form(request: Request):
     return templates.TemplateResponse(
         "new.html", {
-            "request": request,
-            "title": "",
-            "author": "",
-            "year": "",
-            "total_pages": "",
-            "genre": ""
+            "request": request
         }
     )
 
