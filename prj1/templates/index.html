@@ -1,0 +1,40 @@
+<div style="margin: 0 auto; width: 200px;">
+    {% for comment in comments %}
+    <div style="border: 1px solid black; padding: 10px; margin-top: 30px">
+        <h3>
+            {{ comment.text }}
+        </h3>
+
+        {% if comment.rating %}
+            <p>
+                Positive :D
+            </p>
+        {% endif %}
+
+        {% if not comment.rating %}
+        <p>
+            Negative D:
+        </p>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+
+    <div style="margin-top: 30px">
+        <a href="/comments/new"> Add new comment </a>
+    </div>
+    
+    
+    <div style="margin-top: 60px">
+        {% if has_prev %}
+            <a href="/comments/?page={{ prev_page }}&limit={{ limit }}">Prev</a>
+        {% endif %}
+    
+        {% if has_next %}
+            <a href="/comments/?page={{ next_page }}&limit={{ limit }}">Next</a>
+        {% endif %}
+    
+        <p> Page {{ page }} of {{ total_pages }} </p>
+    </div>
+
+</div>

@@ -1,0 +1,19 @@
+<form action="/comments/new" method="post">
+
+    <div>
+        <p> Say anything! </p>
+        <textarea id="text" name="text" rows="5" cols="40" placeholder="Say anything!"></textarea>
+
+    </div>
+    
+    <div>
+        <p> Type of comment </p>
+        <input type="radio" id="positive" name="rating" value="positive" required>
+        <label for="positive"> Positive </label>
+
+        <input type="radio" id="negative" name="rating" value="negative" required>
+        <label for="negative"> Negative </label>
+    </div>
+
+    <input style="margin-top: 30px" type="submit" value="Submit comment" />
+</form>
