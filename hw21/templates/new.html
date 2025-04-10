@@ -1,0 +1,20 @@
+<form action="/books/new" method="post">
+
+    <label> Book title </label>
+    <input type="text" required name="title" value="{{ title }}" />
+
+    <label> Author </label>
+    <input type="text" required name="author" value="{{ author }}" />
+
+    <label> Year of publish </label>
+    <input type="number" required name="year" value="{{ year }}" />
+
+    <label> Number of pages </label>
+    <input type="number" required name="total_pages" value="{{ total_pages }}" />
+
+    <label> Genre </label>
+    <input type="text" required name="genre" value="{{ genre }}" />
+
+
+    <input type="submit" value="Add" />
+</form>

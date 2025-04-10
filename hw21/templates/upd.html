@@ -1,0 +1,24 @@
+<form action="/books/{{ book.id }}/edit" method="post">
+
+    <p3>
+        Update book info
+    </p3>
+
+    <label> Book title </label>
+    <input type="text" required name="title" value="{{ book.title }}" />
+
+    <label> Author </label>
+    <input type="text" required name="author" value="{{ book.author }}" />
+
+    <label> Year of publish </label>
+    <input type="number" required name="year" value="{{ book.year }}" />
+
+    <label> Number of pages </label>
+    <input type="number" required name="total_pages" value="{{ book.total_pages }}" />
+
+    <label> Genre </label>
+    <input type="text" required name="genre" value="{{ book.genre }}" />
+
+
+    <input type="submit" value="Update" />
+</form>
