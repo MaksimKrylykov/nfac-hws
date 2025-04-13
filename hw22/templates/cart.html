@@ -1,0 +1,27 @@
+<h2>Your cart</h2>
+<table>
+    {% for flower in flowers %}
+
+    <div style="margin-top: 50px">
+        <h3>
+            {{ flower.name }}
+        </h3>
+    </div>
+
+    <div>
+        <p>
+            Price: ${{ flower.price }}
+        </p>
+    </div>
+
+    {% endfor %}
+</table>
+
+<h2>
+    Total price: ${{ total_price }}
+</h2>
+
+
+<div style="margin-top: 30px">
+    <a href="/flowers"> Go to shop </a>
+</div>
