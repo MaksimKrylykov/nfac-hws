@@ -1,24 +1,33 @@
-from fastapi import FastAPI, Request, Response, Form, Cookie
+from fastapi import FastAPI, Request, Response, HTTPException, status, Form, Cookie, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
+from pydantic import BaseModel, field_validator
 import json
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-class User:
-    def __init__(self, id: int, email: str, name: str, password: str):
-        self.id = id
-        self.email = email
-        self.name = name
-        self.password = password
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+class User(BaseModel):
+    id: int
+    email: str
+    name: str
+    password: str
+
+    @field_validator("password")
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        return v
     
 
 class UserRepository:
     def __init__(self):
-        self.users = [User(1, '1', '1', '1')]
+        self.users = [User(id=1, email='1', name='1', password='12345678')]
         self.curId = 2
     
     def add_user(self, user: User):
@@ -39,20 +48,31 @@ class UserRepository:
         return None
 
 
-class Flower:
-    def __init__(self, id: int, name: str, quantity: int, price: float):
-        self.id = id
-        self.name = name
-        self.quantity = quantity
-        self.price = price
+class Flower(BaseModel):
+    id: int
+    name: str
+    quantity: int
+    price: float
+
+    @field_validator("quantity")
+    def validate_quantity(cls, v):
+        if v < 0:
+            raise ValueError("Quantity must be non-negative")
+        return v
+    
+    @field_validator("price")
+    def validate_price(cls, v):
+        if v <= 0:
+            raise ValueError("Price must be positive")
+        return v
 
 
 class FlowerRepository:
     def __init__(self):
         self.flowers = [
-            Flower(1, "White flower", 5, 1.99),
-            Flower(2, "Red flower", 7, 2.49),
-            Flower(3, "Green flower", 10, 1.39),
+            Flower(id=1, name="White flower", quantity=5, price=1.99),
+            Flower(id=2, name="Red flower", quantity=7, price=2.49),
+            Flower(id=3, name="Green flower", quantity=10, price=1.39),
         ]
         self.curId = 4
     
@@ -82,172 +102,123 @@ def create_jwt(id: int):
 
 
 def decode_jwt(token: str):
-    if str == None:
-        return -1
-    return jwt.decode(token, "amogus", "HS256")["user_id"]
+    try:
+        return jwt.decode(token, "amogus", "HS256")["user_id"]
+    except:
+        return None
 
 
-@app.get("/signup")
-def get_register(request: Request, response: Response):
-    return templates.TemplateResponse(
-        "register.html", {
-            "request": request
-        }
-    )
+class SignupData(BaseModel):
+    email: str
+    name: str
+    password: str
 
 
 @app.post("/signup")
-def post_register(request: Request, response: Response,
-                 email = Form(), name = Form(), password = Form()):
-    
-    user = userRep.get_user_by_email(email)
-    if user != None:
-        return "Email is already in use!"
-    
-    user = User(0, email, name, password)
-    userRep.add_user(user)
-    return RedirectResponse("/login", status_code=303)
-
-
-@app.get("/login")
-def get_login(request: Request, response: Response):
-    return templates.TemplateResponse(
-        "login.html", {
-            "request": request
-        }
-    )
+def post_register(user: SignupData):
+    if userRep.get_user_by_email(user.email):
+        raise HTTPException(status_code=400, detail="Email already in use")
+      
+    userRep.add_user(User(id=0, **user.model_dump()))
+    return {"message": "User registered"}
 
 
 @app.post("/login")
-def post_login(request: Request, response: Response,
-                 email = Form(), password = Form()):
-
-    user = userRep.get_user_by_email(email)
+def post_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = userRep.get_user_by_email(form_data.username)
+    if not user or user.password != form_data.password:
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
     
-    if user == None or user.password != password:
-        return "Incorrent email or password"
-
-    response = RedirectResponse("/profile", status_code=303)
-    response.set_cookie("token", create_jwt(user.id))
-    return response
+    token = create_jwt(user.id)
+    return {"access_token": token, "token_type": "bearer"}
 
 
-@app.get("/profile")
-def get_profile(request: Request, response: Response,
-                 token = Cookie(default=None)):
-    
+def get_current_user(token: str = Depends(oauth2_scheme)):
     user_id = decode_jwt(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
     user = userRep.get_user_by_id(user_id)
-
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
-    
-    return templates.TemplateResponse(
-        "profile.html", {
-            "request": request,
-            "user": user
-        }
-    )
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
-@app.get("/flowers")
-def get_flowers(request: Request, response: Response, token = Cookie(default=None)):
-    
-    user_id = decode_jwt(token)
-    user = userRep.get_user_by_id(user_id)
-
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
-
-    flowers = flowerRep.get_all()
-
-    return templates.TemplateResponse("flowers.html", {
-        "request": request,
-        "flowers": flowers
-    })
+class UserInfo(BaseModel):
+    email: str
+    name: str
 
 
-@app.get("/flowers/new")
-def get_flowers_form(request: Request, response: Response, token = Cookie(default=None)):
-    
-    user_id = decode_jwt(token)
-    user = userRep.get_user_by_id(user_id)
-
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
-
-    return templates.TemplateResponse("new.html", {
-        "request": request,
-    })
+@app.get("/profile", response_model=UserInfo)
+def get_profile(current_user = Depends(get_current_user)):
+    return UserInfo(email=current_user.email, name=current_user.name)
 
 
-@app.post("/flowers/new")
-def add_flowers(request: Request, response: Response,
-                token = Cookie(default=None), name = Form(), quantity = Form(), price = Form()):
-    
-    user_id = decode_jwt(token)
-    user = userRep.get_user_by_id(user_id)
+@app.get("/flowers", response_model=list[Flower])
+def get_flowers(user = Depends(get_current_user)):
+    return flowerRep.get_all()
 
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
 
-    flower = Flower(0, name, quantity, float(price))
-    flowerRep.add_flower(flower)
+class FlowerData(BaseModel):
+    name: str
+    quantity: int
+    price: float
 
-    return RedirectResponse("/flowers", status_code=303)
+
+@app.post("/flowers")
+def add_flowers(flower: FlowerData, user = Depends(get_current_user)):
+    new_flower = Flower(id=0, **flower.model_dump())
+    flowerRep.add_flower(new_flower)
+    return {"message": "Flower added", "flower": new_flower}
+
+
+class FlowerInfo(BaseModel):
+    id: int
+    name: str
+    price: str
+
+    model_config = {
+        "extra": "ignore"
+    }
 
 
 @app.get("/cart/items")
-def get_cart(request: Request, response: Response,
-                token = Cookie(default=None)):
-    user_id = decode_jwt(token)
-    user = userRep.get_user_by_id(user_id)
+def get_cart(request: Request, user = Depends(get_current_user)):
+    cart_json = dict()
+    flowers = []
+    total_price = 0
 
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
-    
     cart_raw = request.cookies.get("cart")
     if cart_raw == None:
         cart_raw = "[]"
     cart = json.loads(cart_raw)
 
-    flowers = []
-    total_price = 0
     for id in cart:
         flower = flowerRep.get_flower_by_id(int(id))
         if flower != None:
-            flowers.append(flower)
+            flowers.append(FlowerInfo(**flower.model_dump()))
             total_price += flower.price
-    
-    return templates.TemplateResponse("cart.html", {
-        "request": request,
-        "flowers": flowers,
-        "total_price": f"{total_price:.2f}"
-    })
+
+    cart_json["flowers"] = flowers
+    cart_json["total_price"] = total_price
+    return cart_json
 
 
 @app.post("/cart/items")
-def add_to_cart(request: Request, response: Response, flower_id = Form(),
-                token = Cookie(default=None)):
-    
-    user_id = decode_jwt(token)
-    user = userRep.get_user_by_id(user_id)
+def add_to_cart(request: Request, response: Response, flower_id: int = Form(), user = Depends(get_current_user)):
 
-    if user == None:
-        return RedirectResponse("/login", status_code=303)
-    
     cart_raw = request.cookies.get("cart")
     if cart_raw == None:
         cart_raw = "[]"
     cart = json.loads(cart_raw)
     
-    flower = flowerRep.get_flower_by_id(int(flower_id))
+    flower = flowerRep.get_flower_by_id(flower_id)
 
-    if flower == None:
-        return RedirectResponse("/flowers", status_code=303)
+    if flower != None:
+        cart.append(flower_id)
     
-    cart.append(flower_id)
-    response = RedirectResponse("/flowers", status_code=303)
     response.set_cookie("cart", json.dumps(cart))
     return response
 
