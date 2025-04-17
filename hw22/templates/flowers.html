@@ -1,0 +1,38 @@
+<h2>Flowers!</h2>
+<table>
+    {% for flower in flowers %}
+
+    <div style="margin-top: 50px">
+        <h3>
+            {{ flower.name }}
+        </h3>
+    </div>
+
+    <div>
+        <p>
+            Quantity: {{ flower.quantitiy }}
+        </p>
+    </div>
+
+    <div>
+        <p>
+            Price: ${{ flower.price }}
+        </p>
+    </div>
+
+    <form action="/cart/items" method="post">
+        <input type="hidden" name="flower_id" value="{{ flower.id }}">
+        <button type="submit">Add to Cart</button>
+    </form>
+
+    {% endfor %}
+</table>
+
+
+<div style="margin-top: 30px">
+    <a href="/cart/items"> My cart </a>
+</div>
+
+<div style="margin-top: 30px">
+    <a href="/flowers/new"> Add new flower </a>
+</div>
