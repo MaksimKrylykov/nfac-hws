@@ -1,0 +1,17 @@
+<form action="/cars/search" method="get">
+    <input type="search" name="q" value="{{ q }}" />
+    <input type="submit" value="Search" />
+</form>
+
+<table>
+    {% for car in cars %}
+    <tr>
+        <td>
+            {{car.id}} :
+        </td>
+        <td>
+            {{car.name}} {{car.year}}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
